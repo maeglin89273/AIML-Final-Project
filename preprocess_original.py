@@ -22,11 +22,11 @@ def resample(fname, resample_algorithm):
             new_data_queue.append(d)
 
 
-    np.savetxt(fname+".csv", np.array(new_data_queue), delimiter=",")
+    return np.array(new_data_queue)
 
 
 
-def arc_len_resampling(points):
+def arc_len_resample(points):
     new_points = deque()
 
 
@@ -69,7 +69,7 @@ def plot_original_number(num_vec):
     plt.close()
 
 if __name__ == "__main__":
-    filename = "./dataset/pendigits-orig_formatted.tes"
+    filename = "./dataset/pendigits-orig_formatted.tra"
     PERPOSE = "forma"
     if PERPOSE == "format":
         full_accu = deque()
@@ -88,4 +88,5 @@ if __name__ == "__main__":
             out_file.writelines(full_accu)
 
     else:
-        resample(filename, arc_len_resampling)
+
+        np.savetxt("./dataset/pendigits-resample.csv", resample(filename, arc_len_resample), delimiter=",")

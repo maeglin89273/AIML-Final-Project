@@ -1,14 +1,22 @@
 import numpy as np
 from sklearn import cross_validation
 from sklearn.svm import SVC
-from preprocess import parse_xy
+from preprocess import parse_xy, compute_angles_of_edges
+import preprocess_original
+from preprocess_original import resample, arc_len_resample
 
 __author__ = 'maeglin89273'
 
 if __name__ == "__main__":
-    x, y = parse_xy("./dataset/edges_train.csv")
+    preprocess_original.RESAMPLE_SIZE = 12
+    data = resample("./dataset/pendigits-orig_formatted.tra", arc_len_resample)
 
-    clf = SVC(kernel="rbf", gamma=1, C=1)
+    x, y = data[:, :-1], data[:, -1]
+    x = compute_angles_of_edges(x)
+
+    print("train started")
+
+    clf = SVC(kernel="rbf", gamma=0.6, C=5)
     scores = cross_validation.cross_val_score(clf, x, y, cv=10)
     print(scores)
     print(np.mean(scores))

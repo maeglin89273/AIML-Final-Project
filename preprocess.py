@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.decomposition import FastICA
 from mpl_toolkits.mplot3d import Axes3D
 
-TRIAN_FILE_NAME = "./dataset/pendigits-resample_train.csv"
+TRIAN_FILE_NAME = "./dataset/pendigits-resample.csv"
 
 
 def parse_xy(fname):
@@ -24,8 +24,9 @@ def compute_edges(x):
 
 
 def compute_angles_of_edges(x):
-    edges_xy_in_pair = compute_edges(x).reshape((-1, 7, 2))
-    angles_of_edges = np.arctan2(edges_xy_in_pair[:, :, 1], edges_xy_in_pair[:, :, 0])
+    edges = compute_edges(x)
+    edges = edges.reshape((edges.shape[0], -1, 2))
+    angles_of_edges = np.arctan2(edges[:, :, 1], edges[:, :, 0])
 
     return angles_of_edges
 
@@ -62,7 +63,8 @@ def save_data(fname, x, y):
 if __name__ == "__main__":
 
     x, y = parse_xy(TRIAN_FILE_NAME)
-    # plot_points_with_edges(x, y)
-    save_data("./dataset/edges_train.csv", compute_edges(x), y)
-    save_data("./dataset/angles_of_edges_train.csv", compute_angles_of_edges(x), y)
-    save_data("./dataset/angles_between_edges_train.csv", compute_angles_between_edges(x), y)
+    plot_points_with_edges(x, y)
+    #
+    # save_data("./dataset/edges_train.csv", compute_edges(x), y)
+    # save_data("./dataset/angles_of_edges_train.csv", compute_angles_of_edges(x), y)
+    # save_data("./dataset/angles_between_edges_train.csv", compute_angles_between_edges(x), y)
