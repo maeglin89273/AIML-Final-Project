@@ -61,6 +61,42 @@ def arc_len_resample(points):
 
     return np.array(new_points)
 
+def polygonal_approx_resample(points):
+    if points.shape[0] <= RESAMPLE_SIZE:
+        print("warning: points are too few to be resampled, size: %s" % points.shape[0])
+        return points
+
+    result = deque((points[0],))
+    result.extend(polygonal_approx_impl(points, 0, points.shape[0] - 1, RESAMPLE_SIZE))
+    result.append(points[-1])
+    return np.array(result)
+
+def polygonal_approx_impl(points, start_point_idx, end_point_idx, remaining_sample_num):
+    start_point = points[start_point_idx]
+    closing_edge = points[end_point_idx] - start_point
+
+    max_cross = 0
+    best_point_idx = end_point_idx
+    for i in range(start_point_idx + 1, end_point_idx + 1):
+        edge_of_triangle = points[i] - start_point
+        abs_cross = np.absolute(np.cross(edge_of_triangle.cross, closing_edge))
+        if abs_cross > max_cross:
+            max_cross = abs_cross
+            best_point_idx = i
+
+    remaining_sample_num -= 1
+    left_remaining_sample_num = int(remaining_sample_num * float(best_point_idx - start_point_idx) / (end_point_idx - start_point_idx))
+    right_remaining_sample_num = remaining_sample_num - left_remaining_sample_num
+
+    points_collector = deque((points[best_point_idx],))
+    if left_remaining_sample_num > 0:
+        points_collector.extendleft(points_collector.epolygonal_approx_impl(points, start_point_idx, best_point_idx, left_remaining_sample_num))
+
+    if right_remaining_sample_num > 0:
+        points_collector.extend(polygonal_approx_impl(points, best_point_idx, end_point_idx, right_remaining_sample_num))
+
+    return points_collector
+
 def plot_original_number(num_vec):
     plt.plot(num_vec[:, 0], num_vec[:, 1], "o-")
     plt.ylim(0, 500)
