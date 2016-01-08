@@ -35,7 +35,7 @@ def compute_len_angle_of_edges(x):
     edges = edges.reshape((edges.shape[0], -1, 2))
     angles_of_edges = np.arctan2(edges[:, :, 1], edges[:, :, 0])
     len_of_angles = np.linalg.norm(edges, axis=2)
-    len_of_angles = len_of_angles / (np.max(len_of_angles) - np.min(len_of_angles))
+    len_of_angles = len_of_angles * 2 * np.pi / (np.max(len_of_angles) - np.min(len_of_angles))
     return np.hstack((angles_of_edges, len_of_angles))
 
 def compute_angles_between_edges(x):
