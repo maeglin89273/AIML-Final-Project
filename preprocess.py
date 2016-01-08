@@ -30,6 +30,12 @@ def compute_angles_of_edges(x):
 
     return angles_of_edges
 
+def compute_len_angle_of_edges(x):
+    edges = compute_edges(x)
+    edges = edges.reshape((edges.shape[0], -1, 2))
+    angles_of_edges = np.arctan2(edges[:, :, 1], edges[:, :, 0])
+    len_of_angles = np.linalg.norm(edges, axis=2)
+    return np.hstack((angles_of_edges, len_of_angles))
 
 def compute_angles_between_edges(x):
     angles_of_edges = compute_angles_of_edges(x)

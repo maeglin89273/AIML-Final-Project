@@ -26,9 +26,9 @@ if __name__ == "__main__":
     print("train started")
     clf = SVC()
 
-    x = preprocess.compute_angles_of_edges(o_x)
-    param_grid = {"kernel":["rbf"], "gamma": np.linspace(0.2, 0.4, 3), "C": np.linspace(4, 7, 5)}
-    grid_search_opt(x, y, clf, param_grid, 5)
+    # x = preprocess.compute_len_angle_of_edges(o_x)
+    # param_grid = {"kernel":["rbf"], "gamma": np.linspace(0.2, 0.6, 6), "C": np.linspace(3, 8, 8)}
+    # grid_search_opt(x, y, clf, param_grid, 5)
 
 
     #x = preprocess.compute_angles_between_edges(o_x)
@@ -36,9 +36,9 @@ if __name__ == "__main__":
     #grid_search_opt(x, y, clf, param_grid, 3)
 
 
-    # data = preprocess_original.resample("./dataset/pendigits-orig_formatted.tra", "poly_approx")
-    # o_x = data[:, :-1]
-    # x = preprocess.compute_angles_of_edges(o_x)
-    # param_grid = {"kernel":["rbf"], "gamma": np.linspace(0.4, 0.7, 7), "C": np.linspace(10, 20, 10)}
-    # grid_search_opt(x, y, clf, param_grid, 3)
+    data = preprocess_original.resample("./dataset/pendigits-orig_formatted.tra", "poly_approx")
+    o_x = data[:, :-1]
+    x = preprocess.compute_len_angle_of_edges(o_x)
+    param_grid = {"kernel":["rbf"], "gamma": np.linspace(0.4, 0.7, 7), "C": np.linspace(12, 19, 10)}
+    grid_search_opt(x, y, clf, param_grid, 3)
 
