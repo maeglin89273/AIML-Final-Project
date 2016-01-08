@@ -37,17 +37,17 @@ def resample_comparison(fname):
      with open(fname, "r") as fin:
         resample_result_table = {"Original": None, "Arc Length": None, "Polygonal Approximation": None}
         for i, line in enumerate(fin):
-            if PREVIEW_FIGURES_START <= i + 1 < PREVIEW_FIGURES_END:
-                points_datum = np.fromstring(line, sep=",")
-                label, points = points_datum[0], points_datum[1:]
+
+            points_datum = np.fromstring(line, sep=",")
+            label, points = points_datum[0], points_datum[1:]
+            if label == 9 or label == 1:
                 points = min_max_normalizer(points.reshape((-1, 2)))
 
                 resample_result_table["Original"] = points
                 resample_result_table["Arc Length"] = arc_len_resample(points)
                 resample_result_table["Polygonal Approximation"] = poly_approx_resample(points)
                 multi_resampling_plot(resample_result_table)
-            elif i + 1 > PREVIEW_FIGURES_END:
-                break
+
 
 
 def multi_resampling_plot(points_with_title):
