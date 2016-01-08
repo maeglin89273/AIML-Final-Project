@@ -6,7 +6,7 @@ from sklearn.decomposition import FastICA
 from mpl_toolkits.mplot3d import Axes3D
 
 #RUNNING CONFIGS:
-DATASET = "./dataset/pendigits-resampled_train.csv"
+DATASET = "./dataset/pendigits_train.csv"
 PURPOSE = "plot_points"
 
 def parse_xy(dataset_fname):
@@ -44,8 +44,9 @@ def compute_angles_between_edges(x):
 
     return angles_between_edges
 
+
 def plot_points_with_edges(x, y):
-    for i in range(5, 10):
+    for i in range(0, 10):
         print(y[i])
         num_vec = x[i].reshape(-1, 2)
         plt.plot(num_vec[:, 0], num_vec[:, 1], "o-")
@@ -71,3 +72,4 @@ if __name__ == "__main__":
         save_data("./dataset/edges_train.csv", compute_edges(x), y)
         save_data("./dataset/angles_of_edges_train.csv", compute_angles_of_edges(x), y)
         save_data("./dataset/angles_between_edges_train.csv", compute_angles_between_edges(x), y)
+        save_data("./dataset/angle_len_of_edges_train.csv", compute_len_angle_of_edges(x, y))

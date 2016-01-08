@@ -14,8 +14,8 @@ PREVIEW_FIGURES_START = 100
 PREVIEW_FIGURES_END = 102
 
 RESAMPLE_SIZE = 8
-RESAMPLING_ALGORITHM = "arc_len"
-PURPOSE = "compare"
+RESAMPLING_ALGORITHM = "poly_approx"
+PURPOSE = "resample"
 
 
 def resample(fname, resampling_algorithm):
@@ -25,8 +25,8 @@ def resample(fname, resampling_algorithm):
         for line in fin:
             points_datum = np.fromstring(line, sep=",")
             label, points = points_datum[0], points_datum[1:]
-
-            points = resampling_func(min_max_normalizer(points.reshape((-1, 2))))
+            points = points.reshape(-1, 2)
+            points = resampling_func(min_max_normalizer(points))
 
             d = np.hstack((np.ravel(points), label))
             new_data_queue.append(d)

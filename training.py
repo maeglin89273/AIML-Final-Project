@@ -2,6 +2,7 @@ import numpy as np
 from sklearn import cross_validation
 from sklearn.decomposition import PCA
 from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 
@@ -16,18 +17,28 @@ def grid_search_opt(x, y, clf, param_grid, cv):
     print("best score: %s%%" % (100 * grid_search.best_score_))
     print("parameters: %s" % grid_search.best_params_)
 
-if __name__ == "__main__":
-
-    # data = preprocess_original.resample("./dataset/pendigits-orig_formatted.tra", "arc_len")
-    # x, y = data[:, :-1], data[:, -1]
-    o_x, y = preprocess.parse_xy("./dataset/pendigits-resampled_train.csv")
-
+def run_test_set():
+    tr_x, tr_y = preprocess.parse_xy("./dataset/pendigits-resampled_train.csv")
+    ts_x, ts_y = preprocess.parse_xy("./dataset/pendigits-resampled_test.csv")
 
     print("train started")
-    clf = SVC()
 
-    x = preprocess.compute_len_angle_of_edges(o_x)
-    param_grid = {"kernel":["rbf"], "gamma": np.linspace(0.1, 0.3, 5), "C": np.linspace(1, 8, 10)}
+    tr_x = preprocess.compute_angles_of_edges(tr_x)
+    ts_x = preprocess.compute_angles_of_edges(ts_x)
+
+    clf = SVC(kernel="rbf", gamma=0.6, C=5)
+    clf.fit(tr_x, tr_y)
+    pd_y = clf.predict(ts_x)
+    print(clf.score(ts_x, ts_y))
+    print(confusion_matrix(ts_y, pd_y, np.arange(0, 10)))
+
+if __name__ == "__main__":
+
+    data = preprocess_original.resample("./dataset/pendigits-orig_formatted.tra", "poly_approx")
+    x, y = data[:, :-1], data[:, -1]
+
+    clf = SVC()
+    param_grid = {"kernel":["rbf"], "gamma": np.linspace(0.1, 0.8, 5), "C": np.linspace(1, 11, 10)}
     grid_search_opt(x, y, clf, param_grid, 5)
 
 
