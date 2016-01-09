@@ -14,7 +14,7 @@ PREVIEW_FIGURES_START = 100
 PREVIEW_FIGURES_END = 102
 
 RESAMPLE_SIZE = 8
-RESAMPLING_ALGORITHM = "poly_approx"
+RESAMPLING_ALGORITHM = "arc_len"
 PURPOSE = "resample"
 
 
@@ -26,7 +26,7 @@ def resample(fname, resampling_algorithm):
             points_datum = np.fromstring(line, sep=",")
             label, points = points_datum[0], points_datum[1:]
             points = points.reshape(-1, 2)
-            points = resampling_func(min_max_normalizer(points))
+            points = resampling_func(min_max_normalize(points))
 
             d = np.hstack((np.ravel(points), label))
             new_data_queue.append(d)
@@ -41,7 +41,7 @@ def resample_comparison(fname):
             points_datum = np.fromstring(line, sep=",")
             label, points = points_datum[0], points_datum[1:]
             if label == 9 or label == 1:
-                points = min_max_normalizer(points.reshape((-1, 2)))
+                points = min_max_normalize(points.reshape((-1, 2)))
 
                 resample_result_table["Original"] = points
                 resample_result_table["Arc Length"] = arc_len_resample(points)
@@ -62,7 +62,7 @@ def multi_resampling_plot(points_with_title):
     plt.show()
     plt.close()
 
-def min_max_normalizer(points):
+def min_max_normalize(points):
     bottom_left = np.min(points, axis=0)
     points -= bottom_left
 
