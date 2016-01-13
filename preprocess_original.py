@@ -7,15 +7,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #RUNNING CONFIGS:
-ORIGINAL_FILE = "./dataset/pendigits-orig_formatted.tra"
-RESAMPLED_FILE = "./dataset/pendigits-resampled_train.csv"
+ORIGINAL_FILE = "./dataset/pendigits-orig_formatted.tes"
+RESAMPLED_FILE = "./dataset/pendigits-resampled_test.csv"
 
 PREVIEW_FIGURES_START = 100
 PREVIEW_FIGURES_END = 102
 
 RESAMPLE_SIZE = 8
 RESAMPLING_ALGORITHM = "arc_len"
-PURPOSE = "resample"
+PURPOSE = "spec_proof"
 
 
 def resample(fname, resampling_algorithm):
@@ -40,7 +40,7 @@ def resample_comparison(fname):
 
             points_datum = np.fromstring(line, sep=",")
             label, points = points_datum[0], points_datum[1:]
-            if label == 9 or label == 1:
+            if label == 0 or label == 6 or label == 8:
                 points = min_max_normalize(points.reshape((-1, 2)))
 
                 resample_result_table["Original"] = points
@@ -49,6 +49,99 @@ def resample_comparison(fname):
                 multi_resampling_plot(resample_result_table)
 
 
+def compute_properties_of_edges(points):
+    edges = points[1:] - points[:-1]
+    len_of_edges = np.linalg.norm(edges, axis=1)
+    angle_of_edges = np.arctan2(edges[:, 1], edges[:, 0])
+
+    return np.hstack((edges, len_of_edges[:, np.newaxis], angle_of_edges[:, np.newaxis]))
+
+def resample_proof_of_generalization(fname):
+    #proof by variance
+
+    arc_len_collection = [deque() for i in range(0, 10)]
+    poly_approx_collection = [deque() for i in range(0, 10)]
+
+    with open(fname, "r") as fin:
+        for i, line in enumerate(fin):
+            points_datum = np.fromstring(line, sep=",")
+            label, points = int(points_datum[0]), points_datum[1:]
+            points = min_max_normalize(points.reshape((-1, 2)))
+
+            arc_len_result = arc_len_resample(points)
+            poly_approx_result = poly_approx_resample(points)
+
+            arc_len_collection[label].append(compute_properties_of_edges(arc_len_result))
+            poly_approx_collection[label].append(compute_properties_of_edges(poly_approx_result))
+
+    arc_len_variance_of_digits = np.empty((10, RESAMPLE_SIZE - 1, 4))
+    poly_approx_variance_of_digits = np.empty((10, RESAMPLE_SIZE - 1, 4))
+    arc_len_variance_mean_of_digits = np.empty((10, 4))
+    poly_approx_variance_mean_of_digits = np.empty((10, 4))
+
+    for i in range(0, 10):
+        # 7 * 4 variances of 7 edges and 4 related properties
+        arc_len_variance_of_digits[i] = np.array(arc_len_collection[i]).var(axis=0)
+        poly_approx_variance_of_digits[i] = np.array(poly_approx_collection[i]).var(axis=0)
+
+    poly_var_greater_arc_var_percentage = np.sum(poly_approx_variance_of_digits >= arc_len_variance_of_digits) / poly_approx_variance_of_digits.size
+    print("%s%% of variances of poly_approx are greater than the variances of arc_len" % (poly_var_greater_arc_var_percentage * 100))
+
+    arc_len_variance_mean_of_digits = arc_len_variance_of_digits.mean(axis=1)
+    poly_approx_variance_mean_of_digits = poly_approx_variance_of_digits.mean(axis=1)
+
+    print("\"means of variance of 7 edges\" of digits by arc_len:\n%s" % arc_len_variance_mean_of_digits)
+    print("\"means of variance of 7 edges\" of digits by poly_approx:\n%s" % poly_approx_variance_mean_of_digits)
+
+    print("variance summary of 4 properties by arc_len: %s" % arc_len_variance_mean_of_digits.mean(axis=0))
+    print("variance summary of 4 properties by poly_approx: %s" % poly_approx_variance_mean_of_digits.mean(axis=0))
+
+def is_on_edge(point, edge_start, edge_end):
+    a = np.linalg.norm(edge_end - point)
+    b = np.linalg.norm(point - edge_start)
+    c = np.linalg.norm(edge_end - edge_start)
+    return np.abs(a + b - c) <= 1e-12
+
+def point_edge_distance_square(point, edge_start, edge_end):
+    b = edge_end - edge_start
+    a = point - edge_start
+    if np.all(b == 0):
+        return np.linalg.norm(a)
+
+    return np.cross(b, a) ** 2 / np.inner(b, b)
+
+def mse_of_resampled_curve(original, resampled):
+    resampled_edge_end_idx = 1
+    resampled_last_idx = resampled.shape[0] - 1
+    sq_errors_of_points = np.empty((original.shape[0],))
+
+    for i, (start_point, end_point) in enumerate(zip(original[: -1], original[1:])):
+        sq_errors_of_points[i] = point_edge_distance_square(start_point, resampled[resampled_edge_end_idx - 1], resampled[resampled_edge_end_idx])
+        while resampled_edge_end_idx < resampled_last_idx and is_on_edge(resampled[resampled_edge_end_idx], start_point, end_point):
+            resampled_edge_end_idx += 1
+
+    sq_errors_of_points[0] = 0
+    sq_errors_of_points[-1] = 0
+    return sq_errors_of_points.mean()
+
+def resample_proof_of_specialization(fname):
+    error_collection = deque()
+    with open(fname, "r") as fin:
+
+        for i, line in enumerate(fin):
+            points_datum = np.fromstring(line, sep=",")
+            label, points = int(points_datum[0]), points_datum[1:]
+            points = min_max_normalize(points.reshape((-1, 2)))
+
+            arc_len_result = arc_len_resample(points)
+            poly_approx_result = poly_approx_resample(points)
+
+            error_collection.append(np.array([mse_of_resampled_curve(points, arc_len_result), mse_of_resampled_curve(points, poly_approx_result)]))
+
+    error_data = np.array(error_collection)
+    print("%s%% of MSEs of arc_len are greater than the MSEs of poly_approx" % (100 * np.sum(error_data[:, 0] > error_data[:, 1]) / error_data.shape[0]))
+    print("mean of MSEs: %s" % error_data.mean(axis=0))
+    print("var of MSEs: %s" % error_data.var(axis=0))
 
 def multi_resampling_plot(points_with_title):
     f, axarr = plt.subplots(ncols=len(points_with_title), sharex=True)
@@ -173,10 +266,18 @@ def advanced_format(filename):
     with open(filename, "w") as out_file:
         out_file.writelines(full_data)
 
+
 if __name__ == "__main__":
     if PURPOSE == "format":
         advanced_format(ORIGINAL_FILE)
     elif PURPOSE == "compare":
         resample_comparison(ORIGINAL_FILE)
+
+    elif PURPOSE == "gen_proof":
+        resample_proof_of_generalization(ORIGINAL_FILE)
+
+    elif PURPOSE == "spec_proof":
+        resample_proof_of_specialization(ORIGINAL_FILE)
+
     elif "resample":
         np.savetxt(RESAMPLED_FILE, resample(ORIGINAL_FILE, RESAMPLING_ALGORITHM), delimiter=",")

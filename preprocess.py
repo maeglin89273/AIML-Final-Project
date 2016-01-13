@@ -19,40 +19,81 @@ def save_data(fname, x, y):
 
 
 def compute_edges(x):
-    edges = x[:, 2:] - x[:, :-2]
-    return edges
+    return x[:, 2:] - x[:, :-2]
+
+def compute_normalized_edges(tr_x, ts_x=None):
+    edges = compute_edges(tr_x)
+    if ts_x != None:
+        return min_max_normalize(edges, compute_edges(ts_x))
+
+    return min_max_normalize(edges)
 
 
-def compute_angle_of_edges(x):
-    edges = compute_edges(x)
-    edges = edges.reshape((edges.shape[0], -1, 2))
-    angles_of_edges = np.arctan2(edges[:, :, 1], edges[:, :, 0])
+def compute_angle_of_edges(tr_x, ts_x=None):
+    tr_edges = compute_edges(tr_x)
+    tr_edges = tr_edges.reshape((tr_edges.shape[0], -1, 2))
+    tr_angles_of_edges = np.arctan2(tr_edges[:, :, 1], tr_edges[:, :, 0])
 
-    return angles_of_edges
+    if ts_x != None:
+        ts_edges = compute_edges(ts_x)
+        ts_edges = ts_edges.reshape((ts_edges.shape[0], -1, 2))
+        ts_angles_of_edges = np.arctan2(ts_edges[:, :, 1], ts_edges[:, :, 0])
+        return tr_angles_of_edges, ts_angles_of_edges
 
-def compute_len_of_edges(x):
-    edges = compute_edges(x)
-    edges = edges.reshape((edges.shape[0], -1, 2))
-    len_of_angles = np.linalg.norm(edges, axis=2)
-    return min_max_normalize(len_of_angles)
+    return tr_angles_of_edges
 
-def compute_len_angle_of_edges(x):
-    edges = compute_edges(x)
-    edges = edges.reshape((edges.shape[0], -1, 2))
-    angles_of_edges = np.arctan2(edges[:, :, 1], edges[:, :, 0])
-    len_of_edges = np.linalg.norm(edges, axis=2)
-    len_of_edges = min_max_normalize(len_of_edges) * 2 * np.pi
-    return np.hstack((angles_of_edges, len_of_edges))
+def compute_len_of_edges(tr_x, ts_x=None):
+    tr_edges = compute_edges(tr_x)
+    tr_edges = tr_edges.reshape((tr_edges.shape[0], -1, 2))
+    tr_len_of_angles = np.linalg.norm(tr_edges, axis=2)
 
-def min_max_normalize(x):
-    x_min = np.min(x)
-    return (x - x_min) / (np.max(x) - np.min(x))
+    if ts_x != None:
+        ts_edges = compute_edges(tr_x)
+        ts_edges = tr_edges.reshape((ts_edges.shape[0], -1, 2))
+        ts_len_of_angles = np.linalg.norm(ts_edges, axis=2)
+        return min_max_normalize(tr_len_of_angles, ts_len_of_angles)
 
-def compute_angle_between_edges(x):
-    angles_of_edges = compute_angle_of_edges(x)
-    angles_between_edges = (angles_of_edges[:, 1:] - angles_of_edges[:, :-1]) % (2 * np.pi)
+    return min_max_normalize(tr_len_of_angles)
 
-    return angles_between_edges
+def compute_len_angle_of_edges(tr_x, ts_x=None):
+    tr_edges = compute_edges(tr_x)
+    tr_edges = tr_edges.reshape((tr_edges.shape[0], -1, 2))
+    tr_angles_of_edges = np.arctan2(tr_edges[:, :, 1], tr_edges[:, :, 0])
+    tr_len_of_edges = np.linalg.norm(tr_edges, axis=2)
+
+    if ts_x != None:
+        ts_edges = compute_edges(ts_x)
+        ts_edges = ts_edges.reshape((ts_edges.shape[0], -1, 2))
+        ts_angles_of_edges = np.arctan2(ts_edges[:, :, 1], ts_edges[:, :, 0])
+        ts_len_of_edges = np.linalg.norm(ts_edges, axis=2)
+        tr_len_of_edges, ts_len_of_edges = min_max_normalize(tr_len_of_edges, ts_len_of_edges)
+        tr_len_of_edges *= 2 * np.pi
+        ts_len_of_edges *= 2 * np.pi
+        return np.hstack((tr_angles_of_edges, tr_len_of_edges)), np.hstack((ts_angles_of_edges, ts_len_of_edges))
+
+    tr_len_of_edges = min_max_normalize(tr_len_of_edges) * 2 * np.pi
+    return np.hstack((tr_angles_of_edges, tr_len_of_edges))
+
+def min_max_normalize(tr_x, ts_x=None):
+    x_min = np.min(tr_x)
+    dx = np.max(tr_x) - x_min
+    if ts_x != None:
+        return (tr_x - x_min) / dx, (ts_x - x_min) / dx
+
+    return (tr_x - x_min) / dx
+
+
+def compute_angle_between_edges(tr_x, ts_x=None):
+
+    if ts_x != None:
+        tr_angles_of_edges, ts_angles_of_edges = compute_angle_of_edges(tr_x, ts_x)
+        tr_angles_between_edges = (tr_angles_of_edges[:, 1:] - tr_angles_of_edges[:, :-1]) % (2 * np.pi)
+        ts_angles_between_edges = (ts_angles_of_edges[:, 1:] - ts_angles_of_edges[:, :-1]) % (2 * np.pi)
+        return tr_angles_of_edges, ts_angles_of_edges
+
+    tr_angles_of_edges = compute_angle_of_edges(tr_x)
+    tr_angles_between_edges = (tr_angles_of_edges[:, 1:] - tr_angles_of_edges[:, :-1]) % (2 * np.pi)
+    return tr_angles_between_edges
 
 
 def plot_points_with_edges(x, y):
