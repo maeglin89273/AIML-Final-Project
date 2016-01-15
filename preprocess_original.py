@@ -7,15 +7,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #RUNNING CONFIGS:
-ORIGINAL_FILE = "./dataset/pendigits-orig_formatted.tes"
-RESAMPLED_FILE = "./dataset/pendigits-resampled_test.csv"
+ORIGINAL_FILE = "./dataset/pendigits-orig_formatted.tra"
+RESAMPLED_FILE = "./dataset/pendigits-distorted-resampled_train.csv"
 
 PREVIEW_FIGURES_START = 100
 PREVIEW_FIGURES_END = 102
 
 RESAMPLE_SIZE = 8
 RESAMPLING_ALGORITHM = "arc_len"
-PURPOSE = "spec_proof"
+PURPOSE = "distorted_resample"
 
 
 def resample(fname, resampling_algorithm):
@@ -33,6 +33,21 @@ def resample(fname, resampling_algorithm):
 
     return np.array(new_data_queue)
 
+def distorted_resample(fname, resampling_algorithm):
+    new_data_queue = deque()
+    resampling_func = RESAMPLING_FUNC_TABLE[resampling_algorithm]
+    with open(fname, "r") as fin:
+        for line in fin:
+            points_datum = np.fromstring(line, sep=",")
+            label, points = points_datum[0], points_datum[1:]
+            points = points.reshape(-1, 2)
+            points = distorted_min_max_normalize(resampling_func(points))
+
+            d = np.hstack((np.ravel(points), label))
+            new_data_queue.append(d)
+
+    return np.array(new_data_queue)
+
 def resample_comparison(fname):
      with open(fname, "r") as fin:
         resample_result_table = {"Original": None, "Arc Length": None, "Polygonal Approximation": None}
@@ -41,11 +56,11 @@ def resample_comparison(fname):
             points_datum = np.fromstring(line, sep=",")
             label, points = points_datum[0], points_datum[1:]
             if label == 0 or label == 6 or label == 8:
-                points = min_max_normalize(points.reshape((-1, 2)))
+                points = points.reshape((-1, 2))
 
                 resample_result_table["Original"] = points
-                resample_result_table["Arc Length"] = arc_len_resample(points)
-                resample_result_table["Polygonal Approximation"] = poly_approx_resample(points)
+                resample_result_table["Arc Length"] = distorted_min_max_normalize(arc_len_resample(points))
+                resample_result_table["Polygonal Approximation"] = distorted_min_max_normalize(poly_approx_resample(points))
                 multi_resampling_plot(resample_result_table)
 
 
@@ -160,6 +175,13 @@ def min_max_normalize(points):
     points -= bottom_left
 
     points = 100 * (points / np.max(points))
+    return points
+
+def distorted_min_max_normalize(points):
+    bottom_left = np.min(points, axis=0)
+    points -= bottom_left
+
+    points = 100 * (points / np.max(points, axis=0))
     return points
 
 def arc_len_resample(points):
@@ -281,3 +303,5 @@ if __name__ == "__main__":
 
     elif "resample":
         np.savetxt(RESAMPLED_FILE, resample(ORIGINAL_FILE, RESAMPLING_ALGORITHM), delimiter=",")
+    elif "distorted_resampled":
+        np.savetxt(RESAMPLED_FILE, distorted_resample(ORIGINAL_FILE, RESAMPLING_ALGORITHM), delimiter=",")

@@ -12,10 +12,10 @@ import preprocess_original
 __author__ = 'maeglin89273'
 
 
-FINAL_CLASSIFIER = SVC(kernel="rbf", gamma=0.125, C=7.2) #99.7
+FINAL_CLASSIFIER = SVC(kernel="rbf", gamma=4.43, C=3.25) #99.7
 
 FEATURE_EXTRACION_FUNC = preprocess.compute_normalized_edges
-RESAMPLED = "-resampled" # or blank string "" for given dataset
+RESAMPLED = "" # or blank string "" for given dataset
 
 def grid_search_opt(x, y, clf, param_grid, cv):
     grid_search = GridSearchCV(clf, param_grid=param_grid, cv=cv)
@@ -32,6 +32,7 @@ def eval_test_set():
     print("train started")
 
     tr_x, ts_x = FEATURE_EXTRACION_FUNC(tr_x, ts_x)
+    # tr_x, ts_x = preprocess.min_max_normalize(tr_x, ts_x)
 
     FINAL_CLASSIFIER.fit(tr_x, tr_y)
     pd_y = FINAL_CLASSIFIER.predict(ts_x)
